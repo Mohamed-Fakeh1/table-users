@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     curl
 
 # تثبيت امتدادات PHP التي يحتاجها Laravel
-RUN docker-php-ext-install pdo_mysql mbstring exip bcmath gd
+RUN docker-php-ext-install pdo_mysql mbstring exif bcmath gd
 
 # تفعيل موديل الـ Rewrite في Apache
 RUN a2enmod rewrite
