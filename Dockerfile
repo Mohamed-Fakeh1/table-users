@@ -13,11 +13,11 @@ RUN apt-get update && apt-get install -y \
 # تثبيت امتدادات PHP التي يحتاجها Laravel
 RUN docker-php-ext-install pdo_mysql mbstring exif bcmath gd
 
-# إعداد موديلات Apache
-RUN a2dismod mpm_event || true
+# إزالة mpm_event نهائياً وتفعيل mpm_prefork
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.load /etc/apache2/mods-enabled/mpm_event.conf
 RUN a2enmod mpm_prefork rewrite
 
-# توجيه الـ Server لمجلد public الخاص بـ Laravel وتصحيح صيغة ENV
+# توجيه الـ Server لمجلد public الخاص بـ Laravel
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/conf-available/*.conf
@@ -38,5 +38,5 @@ RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
 
-# أمر تشغيل Apache في الواجهة لمنع توقف الحاوية
+# أمر تشغيل Apache في الواجهة
 CMD ["apache2-foreground"]
