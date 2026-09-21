@@ -13,12 +13,12 @@ RUN apt-get update && apt-get install -y \
 # تثبيت امتدادات PHP التي يحتاجها Laravel
 RUN docker-php-ext-install pdo_mysql mbstring exif bcmath gd
 
-# حل مشكلة تعارض MPM في Apache بشكل مباشر
+# إعداد موديلات Apache
 RUN a2dismod mpm_event || true
 RUN a2enmod mpm_prefork rewrite
 
-# توجيه الـ Server لمجلد public الخاص بـ Laravel
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+# توجيه الـ Server لمجلد public الخاص بـ Laravel وتصحيح صيغة ENV
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/conf-available/*.conf
 
@@ -37,3 +37,6 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
+
+# أمر تشغيل Apache في الواجهة لمنع توقف الحاوية
+CMD ["apache2-foreground"]
