@@ -13,9 +13,9 @@ RUN apt-get update && apt-get install -y \
 # تثبيت امتدادات PHP التي يحتاجها Laravel
 RUN docker-php-ext-install pdo_mysql mbstring exif bcmath gd
 
-# تفعيل موديل الـ Rewrite وتعطيل التعارض في MPM
-RUN a2enmod rewrite
-RUN a2dismod mpm_event && a2enmod mpm_prefork
+# حل مشكلة تعارض MPM في Apache بشكل مباشر
+RUN a2dismod mpm_event || true
+RUN a2enmod mpm_prefork rewrite
 
 # توجيه الـ Server لمجلد public الخاص بـ Laravel
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
