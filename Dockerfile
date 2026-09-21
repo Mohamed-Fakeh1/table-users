@@ -1,7 +1,7 @@
-FROM php:8.4-apache
+FROM php:8.4-fpm
 
-# تثبيت الحزم المطلوبة للنظام
 RUN apt-get update && apt-get install -y \
+    nginx \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
@@ -10,33 +10,33 @@ RUN apt-get update && apt-get install -y \
     git \
     curl
 
-# تثبيت امتدادات PHP التي يحتاجها Laravel
 RUN docker-php-ext-install pdo_mysql mbstring exif bcmath gd
 
-# إزالة mpm_event نهائياً وتفعيل mpm_prefork
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.load /etc/apache2/mods-enabled/mpm_event.conf
-RUN a2enmod mpm_prefork rewrite
-
-# توجيه الـ Server لمجلد public الخاص بـ Laravel
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/conf-available/*.conf
-
-# تثبيت Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# نسخ ملفات المشروع
 WORKDIR /var/www/html
 COPY . .
 
-# تثبيت مكتبات Composer
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# إعطاء الصلاحيات المباشرة لمجلدات الـ Storage والـ Cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
+RUN echo 'server { \
+    listen 80; \
+    index index.php index.html; \
+    root /var/www/html/public; \
+    location / { \
+        try_files $uri $uri/ /index.php?$query_string; \
+    } \
+    location ~ \.php$ { \
+        include fastcgi_params; \
+        fastcgi_pass 127.0.0.1:9000; \
+        fastcgi_index index.php; \
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
+    } \
+}' > /etc/nginx/sites-available/default
+
 EXPOSE 80
 
-# أمر تشغيل Apache في الواجهة
-CMD ["apache2-foreground"]
+CMD service nginx start && php-fpm
